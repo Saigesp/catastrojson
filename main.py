@@ -3,6 +3,32 @@ import zipfile
 import subprocess
 import geopandas as gpd
 from pathlib import Path
+import glob
+
+
+def find_catastro_zip_file(input_dir):
+    """Find the catastro ZIP file automatically in the input directory."""
+    # Look for ZIP files matching the pattern XX_UA_XXXXXXXX_SHP.zip
+    pattern = os.path.join(input_dir, "*_UA_*_SHP.zip")
+    zip_files = glob.glob(pattern)
+    
+    if not zip_files:
+        raise FileNotFoundError(f"No catastro ZIP file found in {input_dir}. Looking for pattern *_UA_*_SHP.zip")
+    
+    if len(zip_files) > 1:
+        print(f"Multiple ZIP files found: {zip_files}")
+        print(f"Using the first one: {zip_files[0]}")
+    
+    zip_file = zip_files[0]
+    
+    # Extract the base name for the extracted directory
+    zip_basename = os.path.basename(zip_file)
+    extracted_dir_name = zip_basename.replace('.zip', '')
+    
+    print(f"Found ZIP file: {zip_file}")
+    print(f"Expected extracted directory: {extracted_dir_name}")
+    
+    return zip_file, extracted_dir_name
 
 
 def extract_multipart_zip_with_7z(zip_path, extract_to):
@@ -76,7 +102,6 @@ def convert_individual_shapefiles_to_geojson(shapefile_paths, municipalities, ou
     os.makedirs(output_dir, exist_ok=True)
     
     successful_conversions = 0
-    total_features = 0
     
     for i, shp_path in enumerate(shapefile_paths):
         try:
@@ -115,7 +140,6 @@ def convert_individual_shapefiles_to_geojson(shapefile_paths, municipalities, ou
             gdf.to_file(output_path, driver='GeoJSON')
             
             successful_conversions += 1
-            total_features += len(gdf)
             
             # Print some stats for this municipality
             file_size_mb = os.path.getsize(output_path) / 1024 / 1024
@@ -124,13 +148,12 @@ def convert_individual_shapefiles_to_geojson(shapefile_paths, municipalities, ou
         except Exception as e:
             print(f"    ❌ Error converting {municipality_name}: {e}")
     
-    return successful_conversions, total_features
+    return successful_conversions
 
 
 def main():
     # Define paths
     input_dir = "input"
-    zip_file = os.path.join(input_dir, "08_UA_23012026_SHP.zip")
     extract_dir = "extracted"
     output_dir = "output"
     
@@ -148,8 +171,11 @@ def main():
     print(f"Output directory: {output_dir}/")
     
     try:
+        # Find the ZIP file dynamically
+        zip_file, extracted_dir_name = find_catastro_zip_file(input_dir)
+        shapefile_dir = os.path.join(extract_dir, extracted_dir_name)
+        
         # Check if already extracted
-        shapefile_dir = os.path.join(extract_dir, "08_UA_23012026_SHP")
         if not os.path.exists(shapefile_dir):
             # Extract using 7-Zip
             if not os.path.exists(zip_file):
@@ -174,31 +200,12 @@ def main():
             return
         
         # Convert each shapefile to individual GeoJSON files
-        successful_conversions, total_features = convert_individual_shapefiles_to_geojson(
+        successful_conversions = convert_individual_shapefiles_to_geojson(
             shapefiles, municipalities, output_dir, selected_type
         )
         
-        # Calculate total output directory size
-        total_size_mb = sum(
-            os.path.getsize(os.path.join(output_dir, f)) 
-            for f in os.listdir(output_dir) 
-            if f.endswith('.geojson')
-        ) / 1024 / 1024
-        
         print(f"\n✅ Successfully converted {successful_conversions}/{len(municipalities)} municipalities!")
-        print(f"📊 Total features: {total_features:,}")
-        print(f"📁 Output directory: {output_dir}/")
-        print(f"📄 Files created: {successful_conversions} GeoJSON files")
-        print(f"📏 Total size: {total_size_mb:.1f} MB")
-        
-        # Show a few example files
-        output_files = [f for f in os.listdir(output_dir) if f.endswith('.geojson')]
-        if output_files:
-            print(f"\nExample output files:")
-            for i, filename in enumerate(sorted(output_files)[:5]):
-                print(f"  - {filename}")
-            if len(output_files) > 5:
-                print(f"  ... and {len(output_files) - 5} more files")
+
         
     except Exception as e:
         print(f"❌ Error: {e}")
