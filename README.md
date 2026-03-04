@@ -2,19 +2,6 @@
 
 A Python tool for processing Spanish cadastral data from multi-part ZIP archives into individual GeoJSON files for each municipality.
 
-## Overview
-
-This tool extracts and converts Spanish cadastral shapefiles (from the Spanish National Cadastre) into GeoJSON format. It processes multi-part ZIP archives containing municipal cadastral data and outputs individual GeoJSON files for each municipality.
-
-## Features
-
-- Extracts multi-part ZIP archives using 7-Zip
-- Processes multiple data types: PARCELA, CONSTRU, MASA, SUBPARCE, MAPA, LIMITES, CARVIA, EJES
-- Converts shapefiles to GeoJSON format with WGS84 coordinate system (EPSG:4326)
-- Creates individual GeoJSON files per municipality
-- Handles coordinate system transformations automatically
-- Adds municipality metadata to each feature
-
 ## Prerequisites
 
 ### System Dependencies
@@ -33,7 +20,6 @@ This tool extracts and converts Spanish cadastral shapefiles (from the Spanish N
 ### Python Dependencies
 - Python 3.7+
 - geopandas
-- pathlib (included in Python 3.4+)
 
 Install Python dependencies:
 ```bash
@@ -54,35 +40,6 @@ pip install geopandas
    ```bash
    python main.py
    ```
-
-3. **Output**
-   - Individual GeoJSON files will be created in the `output/` directory
-   - Each file represents one municipality's cadastral data
-   - Files are named: `{municipality_code}_{municipality_name}_{data_type}.geojson`
-
-## Data Types
-
-The tool supports processing different types of cadastral data:
-
-- **PARCELA**: Land parcels (default)
-- **CONSTRU**: Buildings/constructions
-- **MASA**: Building masses
-- **SUBPARCE**: Sub-parcels
-- **MAPA**: Maps
-- **LIMITES**: Administrative boundaries
-- **CARVIA**: Roads/pathways
-- **EJES**: Axes/centerlines
-
-Currently, the script is configured to process PARCELA (land parcels) data by default.
-
-## Output Format
-
-Each GeoJSON file contains:
-- Geographic features in WGS84 coordinate system (EPSG:4326)
-- Original cadastral attributes
-- Added municipality metadata:
-  - `municipality`: Full municipality name
-  - `municipality_code`: Municipality code
 
 ## Example Output
 
